@@ -51,7 +51,7 @@ local flyKeys = {
     Shift = false
 }
 
--- Полет с правильным управлением (относительно камеры)
+-- Полет с полным контролем и без падения
 local function flyFunction()
     if not flyEnabled or not LocalPlayer.Character then return end
     
@@ -66,51 +66,68 @@ local function flyFunction()
     local camera = workspace.CurrentCamera
     local cameraCFrame = camera.CFrame
     
-    -- Векторы направления камеры
+    -- Векторы направления камеры (полные, с вертикальной составляющей)
     local lookVector = cameraCFrame.LookVector
     local rightVector = cameraCFrame.RightVector
-    
-    -- Убираем вертикальную составляющую у векторов направления
-    lookVector = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
-    rightVector = Vector3.new(rightVector.X, 0, rightVector.Z).Unit
+    local upVector = cameraCFrame.UpVector
     
     local direction = Vector3.new(0, 0, 0)
     
-    -- Движение относительно камеры (как в обычной ходьбе)
+    -- Движение относительно камеры с вертикальной составляющей
     if flyKeys.W then direction = direction + lookVector end
     if flyKeys.S then direction = direction - lookVector end
     if flyKeys.D then direction = direction + rightVector end
     if flyKeys.A then direction = direction - rightVector end
     
-    -- Вертикальное движение
+    -- Вертикальное движение (отдельные клавиши)
     if flyKeys.Space then direction = direction + Vector3.new(0, 1, 0) end
     if flyKeys.Shift then direction = direction + Vector3.new(0, -1, 0) end
     
-    -- Применяем скорость
+    -- Нейтрализуем гравитацию
+    rootPart.Velocity = Vector3.new(rootPart.Velocity.X, 0, rootPart.Velocity.Z)
+    
+    -- Применяем скорость движения
     if direction.Magnitude > 0 then
         direction = direction.Unit
-        rootPart.Velocity = direction * flySpeed
+        local moveVelocity = direction * flySpeed
+        
+        -- Компенсируем гравитацию и обеспечиваем плавный полет
+        rootPart.Velocity = Vector3.new(moveVelocity.X, 0, moveVelocity.Z) + Vector3.new(0, moveVelocity.Y, 0)
+        
+        -- Поворачиваем персонажа в сторону горизонтального движения
+        if (flyKeys.W or flyKeys.A or flyKeys.S or flyKeys.D) then
+            local horizontalDirection = Vector3.new(direction.X, 0, direction.Z)
+            if horizontalDirection.Magnitude > 0.1 then
+                rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + horizontalDirection)
+            end
+        elseif direction.Y ~= 0 then
+            -- При вертикальном полете смотрим в ту же сторону, что и камера
+            rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + Vector3.new(lookVector.X, 0, lookVector.Z))
+        end
     else
-        -- Плавная остановка
-        rootPart.Velocity = rootPart.Velocity:Lerp(Vector3.new(0, 0, 0), 0.2)
+        -- Полная остановка при отсутствии движения
+        rootPart.Velocity = Vector3.new(0, 0, 0)
     end
     
-    -- Поворот персонажа в сторону движения (если движемся)
-    if flyKeys.W or flyKeys.A or flyKeys.S or flyKeys.D then
-        local moveDirection = Vector3.new(direction.X, 0, direction.Z)
-        if moveDirection.Magnitude > 0.1 then
-            moveDirection = moveDirection.Unit
-            rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + moveDirection)
-        end
-    end
+    -- Полностью отключаем гравитацию при полете
+    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 end
 
 local function startFly()
     if not LocalPlayer.Character then return end
     
     local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
+    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    
+    if humanoid and rootPart then
         humanoid.PlatformStand = true
+        -- Отключаем автоматические анимации падения
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        
+        -- Немедленно останавливаем падение
+        rootPart.Velocity = Vector3.new(rootPart.Velocity.X, 0, rootPart.Velocity.Z)
+        rootPart.AssemblyLinearVelocity = Vector3.new(rootPart.Velocity.X, 0, rootPart.Velocity.Z)
     end
     
     if flyConnection then
@@ -128,10 +145,14 @@ local function stopFly()
     if humanoid then
         humanoid.PlatformStand = false
         humanoid.WalkSpeed = walkSpeed
+        -- Включаем обратно состояния
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
     end
     
     if rootPart then
         rootPart.Velocity = Vector3.new(0, 0, 0)
+        rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     end
     
     if flyConnection then
@@ -379,9 +400,9 @@ local function loadMainUI()
     ControlsText.Parent = ControlsFrame
     
     if isMobile then
-        ControlsText.Text = "PC: WASD (camera relative)\nMobile: Use joystick + height buttons\nMenu: RightControl/Tap"
+        ControlsText.Text = "Fly follows camera direction\nSpace/Up - Fly up\nShift/Down - Fly down\nMenu: RightControl/Tap"
     else
-        ControlsText.Text = "WASD - Camera relative movement\nSpace - Up / Shift - Down\nRightControl - Toggle Menu"
+        ControlsText.Text = "Fly follows camera direction\nWASD - Move\nSpace - Up / Shift - Down\nRightControl - Menu"
     end
     
     WalkSpeedBox.FocusLost:Connect(function()
@@ -491,7 +512,7 @@ local function loadMainUI()
         FlyToggle.MouseButton1Click:Connect(function()
             MobileUp.Visible = flyEnabled
             MobileDown.Visible = flyEnabled
-            MobileControls.Visible = true -- Джойстик всегда виден
+            MobileControls.Visible = true
         end)
         
         MobileUp.MouseButton1Down:Connect(function()
@@ -512,7 +533,7 @@ local function loadMainUI()
         
         -- Обработка джойстика для мобильных
         local touching = false
-        local joystickCenter = Vector2.new(75, 75) -- Центр джойстика
+        local joystickCenter = Vector2.new(75, 75)
         
         JoystickOuter.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Touch then
@@ -525,7 +546,6 @@ local function loadMainUI()
                 local touchPosition = input.Position
                 local delta = touchPosition - joystickCenter
                 
-                -- Ограничиваем движение внутри круга
                 local maxDistance = 50
                 local distance = math.min(delta.Magnitude, maxDistance)
                 local direction = delta.Unit
@@ -533,16 +553,14 @@ local function loadMainUI()
                 local newPosition = direction * distance
                 JoystickInner.Position = UDim2.new(0.3 + newPosition.X/100, 0, 0.3 + newPosition.Y/100, 0)
                 
-                -- Преобразуем в управление (Y инвертирован для интуитивности)
                 local x = newPosition.X / maxDistance
-                local y = -newPosition.Y / maxDistance -- Инвертируем Y
+                local y = -newPosition.Y / maxDistance
                 
                 if flyEnabled then
-                    -- Обновляем клавиши в зависимости от положения джойстика
-                    flyKeys.W = y > 0.3  -- Вперед
-                    flyKeys.S = y < -0.3 -- Назад
-                    flyKeys.A = x < -0.3 -- Влево
-                    flyKeys.D = x > 0.3  -- Вправо
+                    flyKeys.W = y > 0.3
+                    flyKeys.S = y < -0.3
+                    flyKeys.A = x < -0.3
+                    flyKeys.D = x > 0.3
                 end
             end
         end)
@@ -596,9 +614,10 @@ local function loadMainUI()
         end
     end)
     
-    -- Основной цикл
+    -- Основной цикл для NoClip и скорости ходьбы
     RunService.Heartbeat:Connect(function()
         if LocalPlayer.Character then
+            -- Применяем скорость ходьбы только если не летим
             if not flyEnabled then
                 local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
                 if humanoid then
@@ -606,6 +625,7 @@ local function loadMainUI()
                 end
             end
             
+            -- NoClip
             if noClipEnabled then
                 for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
                     if part:IsA("BasePart") then
