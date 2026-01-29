@@ -15,6 +15,7 @@ local authData = {
     expiry = 0
 }
 
+-- Простое сохранение пароля
 local function saveAuth()
     pcall(function()
         writefile("shfh_auth.txt", tostring(authData.expiry))
@@ -39,12 +40,19 @@ local flyEnabled = false
 local noClipEnabled = false
 local walkSpeed = 16
 local flySpeed = 50
-local flying = false
+
+-- Переменные для полета
 local flyConnection
+local flyKeys = {
+    W = false,
+    A = false,
+    S = false,
+    D = false,
+    Space = false,
+    Shift = false
+}
 
-local FlyT
-local FlyPos
-
+-- Простой стабильный полет
 local function flyFunction()
     if not flyEnabled or not LocalPlayer.Character then return end
     
@@ -55,31 +63,35 @@ local function flyFunction()
     
     humanoid.PlatformStand = true
     
-    local t = FlyT
-    if t then
-        local new = rootPart.CFrame:ToWorldSpace(CFrame.new(FlyPos * (tick() - t) * flySpeed))
-        rootPart.CFrame = new
-        FlyT = tick()
-        FlyPos = FlyPos
+    local direction = Vector3.new(0, 0, 0)
+    
+    if flyKeys.W then direction = direction + rootPart.CFrame.LookVector end
+    if flyKeys.S then direction = direction - rootPart.CFrame.LookVector end
+    if flyKeys.D then direction = direction + rootPart.CFrame.RightVector end
+    if flyKeys.A then direction = direction - rootPart.CFrame.RightVector end
+    if flyKeys.Space then direction = direction + Vector3.new(0, 1, 0) end
+    if flyKeys.Shift then direction = direction + Vector3.new(0, -1, 0) end
+    
+    if direction.Magnitude > 0 then
+        direction = direction.Unit
+        rootPart.Velocity = direction * flySpeed
+    else
+        rootPart.Velocity = Vector3.new(0, 0, 0)
     end
 end
 
 local function startFly()
-    if not flyEnabled or not LocalPlayer.Character then return end
+    if not LocalPlayer.Character then return end
     
     local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    
-    if not humanoid or not rootPart then return end
-    
-    humanoid.PlatformStand = true
-    FlyT = tick()
-    FlyPos = Vector3.new(0, 0, 0)
+    if humanoid then
+        humanoid.PlatformStand = true
+    end
     
     if flyConnection then
         flyConnection:Disconnect()
     end
-    flyConnection = RunService.RenderStepped:Connect(flyFunction)
+    flyConnection = RunService.Heartbeat:Connect(flyFunction)
 end
 
 local function stopFly()
@@ -101,9 +113,6 @@ local function stopFly()
         flyConnection:Disconnect()
         flyConnection = nil
     end
-    
-    FlyT = nil
-    FlyPos = nil
 end
 
 local function loadMainUI()
@@ -221,7 +230,7 @@ local function loadMainUI()
                 local minutes = math.floor((remaining % 3600) / 60)
                 AuthTimer.Text = string.format("Access: %02dh %02dm", hours, minutes)
             else
-                AuthTimer.Text = "Access expired"
+                AuthTimer.Text = "Access expired - restart script"
             end
         else
             AuthTimer.Text = "Access: Unlimited"
@@ -394,21 +403,20 @@ local function loadMainUI()
         end
     end)
     
-    local BGY, BGG
-    
+    -- Мобильный джойстик
     if isMobile then
-        local MobileJoystick = Instance.new("Frame")
-        MobileJoystick.Name = "MobileJoystick"
-        MobileJoystick.Size = UDim2.new(0, 150, 0, 150)
-        MobileJoystick.Position = UDim2.new(0, 20, 1, -170)
-        MobileJoystick.BackgroundTransparency = 1
-        MobileJoystick.Parent = ScreenGui
+        local MobileControls = Instance.new("Frame")
+        MobileControls.Name = "MobileControls"
+        MobileControls.Size = UDim2.new(0, 150, 0, 150)
+        MobileControls.Position = UDim2.new(0, 20, 1, -170)
+        MobileControls.BackgroundTransparency = 1
+        MobileControls.Parent = ScreenGui
         
         local JoystickOuter = Instance.new("Frame")
         JoystickOuter.Size = UDim2.new(1, 0, 1, 0)
         JoystickOuter.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
         JoystickOuter.BackgroundTransparency = 0.5
-        JoystickOuter.Parent = MobileJoystick
+        JoystickOuter.Parent = MobileControls
         
         local JoystickCorner = Instance.new("UICorner")
         JoystickCorner.CornerRadius = UDim.new(1, 0)
@@ -418,7 +426,7 @@ local function loadMainUI()
         JoystickInner.Size = UDim2.new(0.4, 0, 0.4, 0)
         JoystickInner.Position = UDim2.new(0.3, 0, 0.3, 0)
         JoystickInner.BackgroundColor3 = Color3.fromRGB(70, 120, 200)
-        JoystickInner.Parent = MobileJoystick
+        JoystickInner.Parent = MobileControls
         
         local InnerCorner = Instance.new("UICorner")
         InnerCorner.CornerRadius = UDim.new(1, 0)
@@ -447,58 +455,51 @@ local function loadMainUI()
         FlyToggle.MouseButton1Click:Connect(function()
             MobileUp.Visible = flyEnabled
             MobileDown.Visible = flyEnabled
-            MobileJoystick.Visible = not flyEnabled
+            MobileControls.Visible = not flyEnabled
         end)
         
         MobileUp.MouseButton1Down:Connect(function()
-            if flyEnabled and FlyPos then
-                FlyPos = FlyPos + Vector3.new(0, 1, 0)
-            end
+            if flyEnabled then flyKeys.Space = true end
         end)
         
         MobileUp.MouseButton1Up:Connect(function()
-            if flyEnabled and FlyPos then
-                FlyPos = Vector3.new(FlyPos.X, 0, FlyPos.Z)
-            end
+            if flyEnabled then flyKeys.Space = false end
         end)
         
         MobileDown.MouseButton1Down:Connect(function()
-            if flyEnabled and FlyPos then
-                FlyPos = FlyPos + Vector3.new(0, -1, 0)
-            end
+            if flyEnabled then flyKeys.Shift = true end
         end)
         
         MobileDown.MouseButton1Up:Connect(function()
-            if flyEnabled and FlyPos then
-                FlyPos = Vector3.new(FlyPos.X, 0, FlyPos.Z)
-            end
+            if flyEnabled then flyKeys.Shift = false end
         end)
         
         local touching = false
-        local startPos = Vector2.new(0, 0)
-        local joyPos = Vector2.new(0, 0)
         
         JoystickOuter.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Touch then
                 touching = true
-                startPos = input.Position
             end
         end)
         
         JoystickOuter.InputChanged:Connect(function(input)
             if touching and input.UserInputType == Enum.UserInputType.Touch then
-                local currentPos = input.Position
-                local delta = currentPos - startPos
-                local maxDist = 50
+                local delta = input.Delta
+                local x = delta.X
+                local y = delta.Y
                 
-                local distance = math.min(delta.Magnitude, maxDist)
-                local direction = delta.Unit
+                JoystickInner.Position = UDim2.new(
+                    0.3 + math.clamp(x/100, -0.3, 0.3),
+                    0,
+                    0.3 + math.clamp(y/100, -0.3, 0.3),
+                    0
+                )
                 
-                joyPos = direction * distance
-                JoystickInner.Position = UDim2.new(0.3 + joyPos.X/100, 0, 0.3 + joyPos.Y/100, 0)
-                
-                if flyEnabled and FlyPos then
-                    FlyPos = Vector3.new(joyPos.X/50, FlyPos.Y, -joyPos.Y/50)
+                if flyEnabled then
+                    flyKeys.A = x < -10
+                    flyKeys.D = x > 10
+                    flyKeys.W = y < -10
+                    flyKeys.S = y > 10
                 end
             end
         end)
@@ -507,15 +508,17 @@ local function loadMainUI()
             if input.UserInputType == Enum.UserInputType.Touch then
                 touching = false
                 JoystickInner.Position = UDim2.new(0.3, 0, 0.3, 0)
-                if flyEnabled and FlyPos then
-                    FlyPos = Vector3.new(0, FlyPos.Y, 0)
+                if flyEnabled then
+                    flyKeys.A = false
+                    flyKeys.D = false
+                    flyKeys.W = false
+                    flyKeys.S = false
                 end
             end
         end)
     end
     
-    local keys = {}
-    
+    -- Управление для ПК
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed then
             local key = input.KeyCode
@@ -525,18 +528,12 @@ local function loadMainUI()
             end
             
             if flyEnabled then
-                if key == Enum.KeyCode.W then
-                    keys.W = true
-                elseif key == Enum.KeyCode.S then
-                    keys.S = true
-                elseif key == Enum.KeyCode.A then
-                    keys.A = true
-                elseif key == Enum.KeyCode.D then
-                    keys.D = true
-                elseif key == Enum.KeyCode.Space then
-                    keys.Space = true
-                elseif key == Enum.KeyCode.LeftShift or key == Enum.KeyCode.RightShift then
-                    keys.Shift = true
+                if key == Enum.KeyCode.W then flyKeys.W = true
+                elseif key == Enum.KeyCode.A then flyKeys.A = true
+                elseif key == Enum.KeyCode.S then flyKeys.S = true
+                elseif key == Enum.KeyCode.D then flyKeys.D = true
+                elseif key == Enum.KeyCode.Space then flyKeys.Space = true
+                elseif key == Enum.KeyCode.LeftShift or key == Enum.KeyCode.RightShift then flyKeys.Shift = true
                 end
             end
         end
@@ -546,40 +543,17 @@ local function loadMainUI()
         if not gameProcessed and flyEnabled then
             local key = input.KeyCode
             
-            if key == Enum.KeyCode.W then
-                keys.W = false
-            elseif key == Enum.KeyCode.S then
-                keys.S = false
-            elseif key == Enum.KeyCode.A then
-                keys.A = false
-            elseif key == Enum.KeyCode.D then
-                keys.D = false
-            elseif key == Enum.KeyCode.Space then
-                keys.Space = false
-            elseif key == Enum.KeyCode.LeftShift or key == Enum.KeyCode.RightShift then
-                keys.Shift = false
+            if key == Enum.KeyCode.W then flyKeys.W = false
+            elseif key == Enum.KeyCode.A then flyKeys.A = false
+            elseif key == Enum.KeyCode.S then flyKeys.S = false
+            elseif key == Enum.KeyCode.D then flyKeys.D = false
+            elseif key == Enum.KeyCode.Space then flyKeys.Space = false
+            elseif key == Enum.KeyCode.LeftShift or key == Enum.KeyCode.RightShift then flyKeys.Shift = false
             end
         end
     end)
     
-    spawn(function()
-        while true do
-            if flyEnabled and FlyPos then
-                local move = Vector3.new(0, 0, 0)
-                
-                if keys.W then move = move + Vector3.new(0, 0, -1) end
-                if keys.S then move = move + Vector3.new(0, 0, 1) end
-                if keys.A then move = move + Vector3.new(-1, 0, 0) end
-                if keys.D then move = move + Vector3.new(1, 0, 0) end
-                if keys.Space then move = move + Vector3.new(0, 1, 0) end
-                if keys.Shift then move = move + Vector3.new(0, -1, 0) end
-                
-                FlyPos = move.Unit
-            end
-            wait()
-        end
-    end)
-    
+    -- Основной цикл
     RunService.Heartbeat:Connect(function()
         if LocalPlayer.Character then
             if not flyEnabled then
@@ -599,6 +573,7 @@ local function loadMainUI()
         end
     end)
     
+    -- Установка начальной скорости
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
@@ -607,9 +582,11 @@ local function loadMainUI()
     end
 end
 
+-- Проверяем авторизацию при запуске
 if loadAuth() then
     loadMainUI()
 else
+    -- Показываем окно ввода пароля
     local PasswordUI = Instance.new("Frame")
     PasswordUI.Name = "PasswordUI"
     PasswordUI.Size = UDim2.new(0, 300, 0, 180)
@@ -667,7 +644,7 @@ else
     SubmitBtn.MouseButton1Click:Connect(function()
         if PasswordBox.Text == passwordKey then
             authData.authenticated = true
-            authData.expiry = os.time() + (24 * 60 * 60)
+            authData.expiry = os.time() + (24 * 60 * 60) -- 24 часа
             saveAuth()
             PasswordUI:Destroy()
             loadMainUI()
