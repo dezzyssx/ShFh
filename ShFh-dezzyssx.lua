@@ -15,7 +15,6 @@ local authData = {
     expiry = 0
 }
 
--- Простое сохранение пароля
 local function saveAuth()
     pcall(function()
         writefile("shfh_auth.txt", tostring(authData.expiry))
@@ -52,7 +51,7 @@ local flyKeys = {
     Shift = false
 }
 
--- Простой стабильный полет
+-- Полет с правильным управлением (относительно камеры)
 local function flyFunction()
     if not flyEnabled or not LocalPlayer.Character then return end
     
@@ -63,20 +62,46 @@ local function flyFunction()
     
     humanoid.PlatformStand = true
     
+    -- Получаем направление камеры
+    local camera = workspace.CurrentCamera
+    local cameraCFrame = camera.CFrame
+    
+    -- Векторы направления камеры
+    local lookVector = cameraCFrame.LookVector
+    local rightVector = cameraCFrame.RightVector
+    
+    -- Убираем вертикальную составляющую у векторов направления
+    lookVector = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+    rightVector = Vector3.new(rightVector.X, 0, rightVector.Z).Unit
+    
     local direction = Vector3.new(0, 0, 0)
     
-    if flyKeys.W then direction = direction + rootPart.CFrame.LookVector end
-    if flyKeys.S then direction = direction - rootPart.CFrame.LookVector end
-    if flyKeys.D then direction = direction + rootPart.CFrame.RightVector end
-    if flyKeys.A then direction = direction - rootPart.CFrame.RightVector end
+    -- Движение относительно камеры (как в обычной ходьбе)
+    if flyKeys.W then direction = direction + lookVector end
+    if flyKeys.S then direction = direction - lookVector end
+    if flyKeys.D then direction = direction + rightVector end
+    if flyKeys.A then direction = direction - rightVector end
+    
+    -- Вертикальное движение
     if flyKeys.Space then direction = direction + Vector3.new(0, 1, 0) end
     if flyKeys.Shift then direction = direction + Vector3.new(0, -1, 0) end
     
+    -- Применяем скорость
     if direction.Magnitude > 0 then
         direction = direction.Unit
         rootPart.Velocity = direction * flySpeed
     else
-        rootPart.Velocity = Vector3.new(0, 0, 0)
+        -- Плавная остановка
+        rootPart.Velocity = rootPart.Velocity:Lerp(Vector3.new(0, 0, 0), 0.2)
+    end
+    
+    -- Поворот персонажа в сторону движения (если движемся)
+    if flyKeys.W or flyKeys.A or flyKeys.S or flyKeys.D then
+        local moveDirection = Vector3.new(direction.X, 0, direction.Z)
+        if moveDirection.Magnitude > 0.1 then
+            moveDirection = moveDirection.Unit
+            rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + moveDirection)
+        end
     end
 end
 
@@ -113,6 +138,16 @@ local function stopFly()
         flyConnection:Disconnect()
         flyConnection = nil
     end
+    
+    -- Сбрасываем клавиши
+    flyKeys = {
+        W = false,
+        A = false,
+        S = false,
+        D = false,
+        Space = false,
+        Shift = false
+    }
 end
 
 local function loadMainUI()
@@ -344,9 +379,9 @@ local function loadMainUI()
     ControlsText.Parent = ControlsFrame
     
     if isMobile then
-        ControlsText.Text = "PC: WASD + Space/Shift\nMobile: Use joystick\nMenu: RightControl/Tap"
+        ControlsText.Text = "PC: WASD (camera relative)\nMobile: Use joystick + height buttons\nMenu: RightControl/Tap"
     else
-        ControlsText.Text = "WASD - Movement\nSpace - Up / Shift - Down\nRightControl - Toggle Menu"
+        ControlsText.Text = "WASD - Camera relative movement\nSpace - Up / Shift - Down\nRightControl - Toggle Menu"
     end
     
     WalkSpeedBox.FocusLost:Connect(function()
@@ -432,6 +467,7 @@ local function loadMainUI()
         InnerCorner.CornerRadius = UDim.new(1, 0)
         InnerCorner.Parent = JoystickInner
         
+        -- Кнопки высоты для мобильных
         local MobileUp = Instance.new("TextButton")
         MobileUp.Size = UDim2.new(0, 60, 0, 60)
         MobileUp.Position = UDim2.new(0.5, -30, 0, 10)
@@ -455,7 +491,7 @@ local function loadMainUI()
         FlyToggle.MouseButton1Click:Connect(function()
             MobileUp.Visible = flyEnabled
             MobileDown.Visible = flyEnabled
-            MobileControls.Visible = not flyEnabled
+            MobileControls.Visible = true -- Джойстик всегда виден
         end)
         
         MobileUp.MouseButton1Down:Connect(function()
@@ -474,7 +510,9 @@ local function loadMainUI()
             if flyEnabled then flyKeys.Shift = false end
         end)
         
+        -- Обработка джойстика для мобильных
         local touching = false
+        local joystickCenter = Vector2.new(75, 75) -- Центр джойстика
         
         JoystickOuter.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Touch then
@@ -484,22 +522,27 @@ local function loadMainUI()
         
         JoystickOuter.InputChanged:Connect(function(input)
             if touching and input.UserInputType == Enum.UserInputType.Touch then
-                local delta = input.Delta
-                local x = delta.X
-                local y = delta.Y
+                local touchPosition = input.Position
+                local delta = touchPosition - joystickCenter
                 
-                JoystickInner.Position = UDim2.new(
-                    0.3 + math.clamp(x/100, -0.3, 0.3),
-                    0,
-                    0.3 + math.clamp(y/100, -0.3, 0.3),
-                    0
-                )
+                -- Ограничиваем движение внутри круга
+                local maxDistance = 50
+                local distance = math.min(delta.Magnitude, maxDistance)
+                local direction = delta.Unit
+                
+                local newPosition = direction * distance
+                JoystickInner.Position = UDim2.new(0.3 + newPosition.X/100, 0, 0.3 + newPosition.Y/100, 0)
+                
+                -- Преобразуем в управление (Y инвертирован для интуитивности)
+                local x = newPosition.X / maxDistance
+                local y = -newPosition.Y / maxDistance -- Инвертируем Y
                 
                 if flyEnabled then
-                    flyKeys.A = x < -10
-                    flyKeys.D = x > 10
-                    flyKeys.W = y < -10
-                    flyKeys.S = y > 10
+                    -- Обновляем клавиши в зависимости от положения джойстика
+                    flyKeys.W = y > 0.3  -- Вперед
+                    flyKeys.S = y < -0.3 -- Назад
+                    flyKeys.A = x < -0.3 -- Влево
+                    flyKeys.D = x > 0.3  -- Вправо
                 end
             end
         end)
@@ -509,10 +552,10 @@ local function loadMainUI()
                 touching = false
                 JoystickInner.Position = UDim2.new(0.3, 0, 0.3, 0)
                 if flyEnabled then
-                    flyKeys.A = false
-                    flyKeys.D = false
                     flyKeys.W = false
                     flyKeys.S = false
+                    flyKeys.A = false
+                    flyKeys.D = false
                 end
             end
         end)
@@ -644,7 +687,7 @@ else
     SubmitBtn.MouseButton1Click:Connect(function()
         if PasswordBox.Text == passwordKey then
             authData.authenticated = true
-            authData.expiry = os.time() + (24 * 60 * 60) -- 24 часа
+            authData.expiry = os.time() + (24 * 60 * 60)
             saveAuth()
             PasswordUI:Destroy()
             loadMainUI()
