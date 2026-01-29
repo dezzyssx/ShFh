@@ -1,44 +1,10 @@
--- ShFh Enhanced by @dezzyxx
--- Version: 2.1
--- Created for flamOus chat
--- Added RGB effects and improved UI
+-- ShFh by @dezzyxx
+-- Created for flam0us chat
 
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-
--- RGB цветовые функции
-local rgbSpeed = 2
-local hue = 0
-
-local function updateHue()
-    hue = (hue + rgbSpeed * RunService.RenderStepped:Wait()) % 360
-end
-
-local function hsvToRgb(h, s, v)
-    h = h % 360
-    local c = v * s
-    local x = c * (1 - math.abs((h / 60) % 2 - 1))
-    local m = v - c
-    
-    local r1, g1, b1 = 0, 0, 0
-    if h < 60 then
-        r1, g1, b1 = c, x, 0
-    elseif h < 120 then
-        r1, g1, b1 = x, c, 0
-    elseif h < 180 then
-        r1, g1, b1 = 0, c, x
-    elseif h < 240 then
-        r1, g1, b1 = 0, x, c
-    elseif h < 300 then
-        r1, g1, b1 = x, 0, c
-    else
-        r1, g1, b1 = c, 0, x
-    end
-    
-    return Color3.new(r1 + m, g1 + m, b1 + m)
-end
 
 -- Создание интерфейса
 local ScreenGui = Instance.new("ScreenGui")
@@ -48,69 +14,49 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 280, 0, 280)
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -140)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MainFrame.BackgroundTransparency = 0.1
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.fromRGB(50, 50, 60)
+MainFrame.Size = UDim2.new(0, 250, 0, 250)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -125)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.Visible = false -- Скрыто по умолчанию
 MainFrame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.CornerRadius = UDim.new(0, 6)
 UICorner.Parent = MainFrame
 
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(80, 80, 90)
-UIStroke.Thickness = 2
-UIStroke.Parent = MainFrame
-
--- Заголовок с RGB эффектом
+-- Заголовок
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Size = UDim2.new(1, 0, 0, 30)
 Title.Position = UDim2.new(0, 0, 0, 0)
-Title.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-Title.BackgroundTransparency = 0.3
-Title.Text = "ShFh v2.1 by @dezzyxx"
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+Title.Text = "ShFh by @dezzyxx"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 18
+Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.Parent = MainFrame
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 8)
-TitleCorner.Parent = Title
-
--- Версия
-local Version = Instance.new("TextLabel")
-Version.Name = "Version"
-Version.Size = UDim2.new(0, 60, 0, 20)
-Version.Position = UDim2.new(1, -65, 0, 5)
-Version.BackgroundTransparency = 1
-Version.Text = "v2.1 RGB"
-Version.TextColor3 = Color3.fromRGB(150, 150, 200)
-Version.TextSize = 12
-Version.Font = Enum.Font.Gotham
-Version.TextXAlignment = Enum.TextXAlignment.Right
-Version.Parent = Title
-
--- Контейнер для настроек
-local SettingsFrame = Instance.new("Frame")
-SettingsFrame.Name = "SettingsFrame"
-SettingsFrame.Size = UDim2.new(1, -20, 1, -60)
-SettingsFrame.Position = UDim2.new(0, 10, 0, 50)
-SettingsFrame.BackgroundTransparency = 1
-SettingsFrame.Parent = MainFrame
+local SubTitle = Instance.new("TextLabel")
+SubTitle.Name = "SubTitle"
+SubTitle.Size = UDim2.new(1, 0, 0, 20)
+SubTitle.Position = UDim2.new(0, 0, 0, 30)
+SubTitle.BackgroundTransparency = 1
+SubTitle.Text = "Made for flam0us chat"
+SubTitle.TextColor3 = Color3.fromRGB(180, 180, 220)
+SubTitle.TextSize = 12
+SubTitle.Font = Enum.Font.Gotham
+SubTitle.Parent = MainFrame
 
 -- Walk Speed
 local WalkSpeedFrame = Instance.new("Frame")
 WalkSpeedFrame.Name = "WalkSpeedFrame"
-WalkSpeedFrame.Size = UDim2.new(1, 0, 0, 50)
+WalkSpeedFrame.Size = UDim2.new(1, -20, 0, 30)
+WalkSpeedFrame.Position = UDim2.new(0, 10, 0, 60)
 WalkSpeedFrame.BackgroundTransparency = 1
-WalkSpeedFrame.Parent = SettingsFrame
+WalkSpeedFrame.Parent = MainFrame
 
 local WalkSpeedLabel = Instance.new("TextLabel")
 WalkSpeedLabel.Name = "WalkSpeedLabel"
@@ -118,20 +64,21 @@ WalkSpeedLabel.Size = UDim2.new(0.6, 0, 1, 0)
 WalkSpeedLabel.BackgroundTransparency = 1
 WalkSpeedLabel.Text = "Walk Speed:"
 WalkSpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-WalkSpeedLabel.TextSize = 16
+WalkSpeedLabel.TextSize = 14
 WalkSpeedLabel.Font = Enum.Font.Gotham
 WalkSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 WalkSpeedLabel.Parent = WalkSpeedFrame
 
 local WalkSpeedValue = Instance.new("TextBox")
 WalkSpeedValue.Name = "WalkSpeedValue"
-WalkSpeedValue.Size = UDim2.new(0.3, 0, 0.6, 0)
-WalkSpeedValue.Position = UDim2.new(0.6, 0, 0.2, 0)
+WalkSpeedValue.Size = UDim2.new(0.35, 0, 1, 0)
+WalkSpeedValue.Position = UDim2.new(0.65, 0, 0, 0)
 WalkSpeedValue.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 WalkSpeedValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-WalkSpeedValue.Text = "139"
+WalkSpeedValue.Text = "500"
 WalkSpeedValue.TextSize = 14
 WalkSpeedValue.Font = Enum.Font.Gotham
+WalkSpeedValue.ClearTextOnFocus = false
 WalkSpeedValue.Parent = WalkSpeedFrame
 
 local WalkSpeedCorner = Instance.new("UICorner")
@@ -141,10 +88,10 @@ WalkSpeedCorner.Parent = WalkSpeedValue
 -- Fly Speed
 local FlySpeedFrame = Instance.new("Frame")
 FlySpeedFrame.Name = "FlySpeedFrame"
-FlySpeedFrame.Size = UDim2.new(1, 0, 0, 50)
-FlySpeedFrame.Position = UDim2.new(0, 0, 0, 50)
+FlySpeedFrame.Size = UDim2.new(1, -20, 0, 30)
+FlySpeedFrame.Position = UDim2.new(0, 10, 0, 95)
 FlySpeedFrame.BackgroundTransparency = 1
-FlySpeedFrame.Parent = SettingsFrame
+FlySpeedFrame.Parent = MainFrame
 
 local FlySpeedLabel = Instance.new("TextLabel")
 FlySpeedLabel.Name = "FlySpeedLabel"
@@ -152,45 +99,38 @@ FlySpeedLabel.Size = UDim2.new(0.6, 0, 1, 0)
 FlySpeedLabel.BackgroundTransparency = 1
 FlySpeedLabel.Text = "Fly Speed:"
 FlySpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-FlySpeedLabel.TextSize = 16
+FlySpeedLabel.TextSize = 14
 FlySpeedLabel.Font = Enum.Font.Gotham
 FlySpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 FlySpeedLabel.Parent = FlySpeedFrame
 
 local FlySpeedValue = Instance.new("TextBox")
 FlySpeedValue.Name = "FlySpeedValue"
-FlySpeedValue.Size = UDim2.new(0.3, 0, 0.6, 0)
-FlySpeedValue.Position = UDim2.new(0.6, 0, 0.2, 0)
+FlySpeedValue.Size = UDim2.new(0.35, 0, 1, 0)
+FlySpeedValue.Position = UDim2.new(0.65, 0, 0, 0)
 FlySpeedValue.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 FlySpeedValue.TextColor3 = Color3.fromRGB(255, 255, 255)
 FlySpeedValue.Text = "237"
 FlySpeedValue.TextSize = 14
 FlySpeedValue.Font = Enum.Font.Gotham
+FlySpeedValue.ClearTextOnFocus = false
 FlySpeedValue.Parent = FlySpeedFrame
 
 local FlySpeedCorner = Instance.new("UICorner")
 FlySpeedCorner.CornerRadius = UDim.new(0, 4)
 FlySpeedCorner.Parent = FlySpeedValue
 
--- Toggles
-local ToggleFrame = Instance.new("Frame")
-ToggleFrame.Name = "ToggleFrame"
-ToggleFrame.Size = UDim2.new(1, 0, 0, 80)
-ToggleFrame.Position = UDim2.new(0, 0, 0, 100)
-ToggleFrame.BackgroundTransparency = 1
-ToggleFrame.Parent = SettingsFrame
-
 -- Fly Hack Toggle
 local FlyToggle = Instance.new("TextButton")
 FlyToggle.Name = "FlyToggle"
-FlyToggle.Size = UDim2.new(0.4, -5, 0, 30)
-FlyToggle.Position = UDim2.new(0, 0, 0, 0)
-FlyToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+FlyToggle.Size = UDim2.new(1, -20, 0, 30)
+FlyToggle.Position = UDim2.new(0, 10, 0, 130)
+FlyToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 FlyToggle.Text = "Fly Hack: OFF"
-FlyToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+FlyToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
 FlyToggle.TextSize = 14
 FlyToggle.Font = Enum.Font.GothamBold
-FlyToggle.Parent = ToggleFrame
+FlyToggle.Parent = MainFrame
 
 local FlyToggleCorner = Instance.new("UICorner")
 FlyToggleCorner.CornerRadius = UDim.new(0, 6)
@@ -199,88 +139,96 @@ FlyToggleCorner.Parent = FlyToggle
 -- No Clip Toggle
 local NoClipToggle = Instance.new("TextButton")
 NoClipToggle.Name = "NoClipToggle"
-NoClipToggle.Size = UDim2.new(0.4, -5, 0, 30)
-NoClipToggle.Position = UDim2.new(0.6, 0, 0, 0)
-NoClipToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+NoClipToggle.Size = UDim2.new(1, -20, 0, 30)
+NoClipToggle.Position = UDim2.new(0, 10, 0, 165)
+NoClipToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 NoClipToggle.Text = "No Clip: OFF"
-NoClipToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+NoClipToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
 NoClipToggle.TextSize = 14
 NoClipToggle.Font = Enum.Font.GothamBold
-NoClipToggle.Parent = ToggleFrame
+NoClipToggle.Parent = MainFrame
 
 local NoClipToggleCorner = Instance.new("UICorner")
 NoClipToggleCorner.CornerRadius = UDim.new(0, 6)
 NoClipToggleCorner.Parent = NoClipToggle
 
 -- Controls Info
-local ControlsFrame = Instance.new("Frame")
-ControlsFrame.Name = "ControlsFrame"
-ControlsFrame.Size = UDim2.new(1, 0, 0, 80)
-ControlsFrame.Position = UDim2.new(0, 0, 0, 180)
-ControlsFrame.BackgroundTransparency = 1
-ControlsFrame.Parent = SettingsFrame
-
 local ControlsLabel = Instance.new("TextLabel")
 ControlsLabel.Name = "ControlsLabel"
-ControlsLabel.Size = UDim2.new(1, 0, 0, 20)
+ControlsLabel.Size = UDim2.new(1, -20, 0, 20)
+ControlsLabel.Position = UDim2.new(0, 10, 0, 200)
 ControlsLabel.BackgroundTransparency = 1
 ControlsLabel.Text = "Controls:"
 ControlsLabel.TextColor3 = Color3.fromRGB(180, 180, 220)
 ControlsLabel.TextSize = 14
 ControlsLabel.Font = Enum.Font.GothamBold
 ControlsLabel.TextXAlignment = Enum.TextXAlignment.Left
-ControlsLabel.Parent = ControlsFrame
+ControlsLabel.Parent = MainFrame
 
 local ControlsText = Instance.new("TextLabel")
 ControlsText.Name = "ControlsText"
-ControlsText.Size = UDim2.new(1, 0, 0, 60)
-ControlsText.Position = UDim2.new(0, 0, 0, 20)
+ControlsText.Size = UDim2.new(1, -20, 0, 40)
+ControlsText.Position = UDim2.new(0, 10, 0, 215)
 ControlsText.BackgroundTransparency = 1
-ControlsText.Text = "WASD - Movement\nSpace - Up / Shift - Down\nRightControl - Toggle Menu"
+ControlsText.Text = "WASD - Movement\nSpace - Up / Shift - Down"
 ControlsText.TextColor3 = Color3.fromRGB(200, 200, 220)
 ControlsText.TextSize = 13
 ControlsText.Font = Enum.Font.Gotham
 ControlsText.TextXAlignment = Enum.TextXAlignment.Left
 ControlsText.TextYAlignment = Enum.TextYAlignment.Top
-ControlsText.Parent = ControlsFrame
+ControlsText.Parent = MainFrame
+
+-- Всплывающее уведомление
+local Notification = Instance.new("Frame")
+Notification.Name = "Notification"
+Notification.Size = UDim2.new(0, 200, 0, 40)
+Notification.Position = UDim2.new(0.5, -100, 0, 10)
+Notification.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Notification.BackgroundTransparency = 0.2
+Notification.BorderSizePixel = 0
+Notification.Visible = false
+Notification.Parent = ScreenGui
+
+local NotificationCorner = Instance.new("UICorner")
+NotificationCorner.CornerRadius = UDim.new(0, 6)
+NotificationCorner.Parent = Notification
+
+local NotificationText = Instance.new("TextLabel")
+NotificationText.Name = "NotificationText"
+NotificationText.Size = UDim2.new(1, 0, 1, 0)
+NotificationText.BackgroundTransparency = 1
+NotificationText.Text = "ShFh Loaded! Press RightControl"
+NotificationText.TextColor3 = Color3.fromRGB(255, 255, 255)
+NotificationText.TextSize = 14
+NotificationText.Font = Enum.Font.GothamBold
+NotificationText.Parent = Notification
 
 -- Переменные
 local flyEnabled = false
 local noClipEnabled = false
-local menuVisible = true
-local walkSpeed = 139
+local walkSpeed = 500
 local flySpeed = 237
+local flyBodyVelocity
 
--- Функции
-local function updateColors()
-    local rgbColor = hsvToRgb(hue, 0.8, 1)
-    local darkerRgb = hsvToRgb(hue, 0.6, 0.8)
+-- Функция показа уведомления
+local function showNotification(message, duration)
+    NotificationText.Text = message
+    Notification.Visible = true
     
-    -- Обновление цвета заголовка и границ
-    Title.TextColor3 = rgbColor
-    MainFrame.BorderColor3 = darkerRgb
-    UIStroke.Color = darkerRgb
+    task.wait(duration or 3)
     
-    -- Обновление цвета версии
-    Version.TextColor3 = hsvToRgb((hue + 180) % 360, 0.7, 0.9)
-    
-    -- Обновление цвета включенных тогглов
-    if flyEnabled then
-        FlyToggle.BackgroundColor3 = hsvToRgb(hue, 0.4, 0.3)
-        FlyToggle.TextColor3 = hsvToRgb(hue, 0.8, 1)
-    end
-    
-    if noClipEnabled then
-        NoClipToggle.BackgroundColor3 = hsvToRgb((hue + 120) % 360, 0.4, 0.3)
-        NoClipToggle.TextColor3 = hsvToRgb((hue + 120) % 360, 0.8, 1)
-    end
+    Notification.Visible = false
 end
+
+-- Показ уведомления при загрузке
+showNotification("ShFh Loaded! Press RightControl", 4)
 
 -- Обработчики значений
 WalkSpeedValue.FocusLost:Connect(function()
     local value = tonumber(WalkSpeedValue.Text)
     if value and value >= 1 and value <= 500 then
         walkSpeed = value
+        WalkSpeedValue.Text = tostring(walkSpeed)
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
         end
@@ -293,10 +241,32 @@ FlySpeedValue.FocusLost:Connect(function()
     local value = tonumber(FlySpeedValue.Text)
     if value and value >= 1 and value <= 500 then
         flySpeed = value
+        FlySpeedValue.Text = tostring(flySpeed)
     else
         FlySpeedValue.Text = tostring(flySpeed)
     end
 end)
+
+-- Функция полета
+local function setupFly()
+    if flyEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        -- Удаляем старый BodyVelocity если есть
+        if flyBodyVelocity then
+            flyBodyVelocity:Destroy()
+            flyBodyVelocity = nil
+        end
+        
+        -- Создаем новый BodyVelocity для полета
+        flyBodyVelocity = Instance.new("BodyVelocity")
+        flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        flyBodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
+        flyBodyVelocity.P = 1250
+        flyBodyVelocity.Parent = LocalPlayer.Character.HumanoidRootPart
+    elseif not flyEnabled and flyBodyVelocity then
+        flyBodyVelocity:Destroy()
+        flyBodyVelocity = nil
+    end
+end
 
 -- Тогглы
 FlyToggle.MouseButton1Click:Connect(function()
@@ -304,11 +274,13 @@ FlyToggle.MouseButton1Click:Connect(function()
     FlyToggle.Text = "Fly Hack: " .. (flyEnabled and "ON" or "OFF")
     
     if flyEnabled then
-        -- Активация полета
-        FlyToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
+        FlyToggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+        showNotification("Fly Hack: ON", 2)
+        setupFly()
     else
-        -- Деактивация полета
-        FlyToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+        FlyToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+        showNotification("Fly Hack: OFF", 2)
+        setupFly()
     end
 end)
 
@@ -317,28 +289,76 @@ NoClipToggle.MouseButton1Click:Connect(function()
     NoClipToggle.Text = "No Clip: " .. (noClipEnabled and "ON" or "OFF")
     
     if noClipEnabled then
-        NoClipToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
+        NoClipToggle.TextColor3 = Color3.fromRGB(80, 255, 80)
+        showNotification("No Clip: ON", 2)
     else
-        NoClipToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+        NoClipToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
+        showNotification("No Clip: OFF", 2)
     end
 end)
 
--- Управление меню
+-- Управление полетом
+local flying = false
+local flyDirection = Vector3.new(0, 0, 0)
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed then
-        if input.KeyCode == Enum.KeyCode.RightControl then
-            menuVisible = not menuVisible
-            MainFrame.Visible = menuVisible
+    if not gameProcessed and flyEnabled and flyBodyVelocity then
+        local key = input.KeyCode
+        
+        if key == Enum.KeyCode.W then
+            flyDirection = flyDirection + Vector3.new(0, 0, -1)
+            flying = true
+        elseif key == Enum.KeyCode.S then
+            flyDirection = flyDirection + Vector3.new(0, 0, 1)
+            flying = true
+        elseif key == Enum.KeyCode.A then
+            flyDirection = flyDirection + Vector3.new(-1, 0, 0)
+            flying = true
+        elseif key == Enum.KeyCode.D then
+            flyDirection = flyDirection + Vector3.new(1, 0, 0)
+            flying = true
+        elseif key == Enum.KeyCode.Space then
+            flyDirection = flyDirection + Vector3.new(0, 1, 0)
+            flying = true
+        elseif key == Enum.KeyCode.LeftShift or key == Enum.KeyCode.RightShift then
+            flyDirection = flyDirection + Vector3.new(0, -1, 0)
+            flying = true
+        elseif key == Enum.KeyCode.RightControl then
+            MainFrame.Visible = not MainFrame.Visible
+        end
+    elseif not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if not gameProcessed and flyEnabled then
+        local key = input.KeyCode
+        
+        if key == Enum.KeyCode.W then
+            flyDirection = flyDirection - Vector3.new(0, 0, -1)
+        elseif key == Enum.KeyCode.S then
+            flyDirection = flyDirection - Vector3.new(0, 0, 1)
+        elseif key == Enum.KeyCode.A then
+            flyDirection = flyDirection - Vector3.new(-1, 0, 0)
+        elseif key == Enum.KeyCode.D then
+            flyDirection = flyDirection - Vector3.new(1, 0, 0)
+        elseif key == Enum.KeyCode.Space then
+            flyDirection = flyDirection - Vector3.new(0, 1, 0)
+        elseif key == Enum.KeyCode.LeftShift or key == Enum.KeyCode.RightShift then
+            flyDirection = flyDirection - Vector3.new(0, -1, 0)
+        end
+        
+        -- Если все клавиши отпущены, останавливаем полет
+        if flyDirection.Magnitude == 0 then
+            flying = false
         end
     end
 end)
 
--- Основной цикл для RGB
-RunService.RenderStepped:Connect(function(deltaTime)
-    updateHue()
-    updateColors()
-    
-    -- Применение настроек скорости
+-- Основной цикл
+RunService.Heartbeat:Connect(function()
+    -- Применение WalkSpeed когда не летим
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         if not flyEnabled then
             LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
@@ -352,14 +372,56 @@ RunService.RenderStepped:Connect(function(deltaTime)
                 part.CanCollide = false
             end
         end
+    elseif not noClipEnabled and LocalPlayer.Character then
+        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+    
+    -- Управление полетом
+    if flyEnabled and flyBodyVelocity and flying then
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = character.HumanoidRootPart
+            local lookVector = rootPart.CFrame.LookVector
+            local rightVector = rootPart.CFrame.RightVector
+            
+            local moveDirection = Vector3.new(0, 0, 0)
+            
+            if flyDirection.Z < 0 then -- W
+                moveDirection = moveDirection + lookVector
+            elseif flyDirection.Z > 0 then -- S
+                moveDirection = moveDirection - lookVector
+            end
+            
+            if flyDirection.X < 0 then -- A
+                moveDirection = moveDirection - rightVector
+            elseif flyDirection.X > 0 then -- D
+                moveDirection = moveDirection + rightVector
+            end
+            
+            if flyDirection.Y < 0 then -- Shift
+                moveDirection = moveDirection + Vector3.new(0, -1, 0)
+            elseif flyDirection.Y > 0 then -- Space
+                moveDirection = moveDirection + Vector3.new(0, 1, 0)
+            end
+            
+            if moveDirection.Magnitude > 0 then
+                moveDirection = moveDirection.Unit
+                flyBodyVelocity.Velocity = moveDirection * flySpeed
+            else
+                flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
     end
 end)
 
--- Инструкция в консоль
-print("=== ShFh v2.1 RGB Loaded ===")
-print("Controls:")
-print("WASD - Movement")
-print("Space - Up")
-print("Shift - Down")
-print("RightControl - Toggle Menu")
-print("============================")
+-- Установка начальной скорости
+task.spawn(function()
+    task.wait(1)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
+    end
+end)
