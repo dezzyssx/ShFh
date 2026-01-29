@@ -1,16 +1,13 @@
 -- ShFh by @dezzyxx
--- Created for flam0us chat
+-- For flam0us chat
 
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
 
--- Проверяем платформу
 local isMobile = UserInputService.TouchEnabled
 
--- Создание интерфейса
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ShFhGUI"
 ScreenGui.Parent = game.CoreGui
@@ -23,15 +20,14 @@ MainFrame.Position = UDim2.new(0.5, -125, 0.5, -125)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.Draggable = not isMobile -- На телефоне не перемещаем
-MainFrame.Visible = false -- Скрыто по умолчанию
+MainFrame.Draggable = not isMobile
+MainFrame.Visible = false
 MainFrame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 6)
 UICorner.Parent = MainFrame
 
--- Заголовок
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
 Title.Size = UDim2.new(1, 0, 0, 30)
@@ -54,7 +50,6 @@ SubTitle.TextSize = 12
 SubTitle.Font = Enum.Font.Gotham
 SubTitle.Parent = MainFrame
 
--- Walk Speed
 local WalkSpeedFrame = Instance.new("Frame")
 WalkSpeedFrame.Name = "WalkSpeedFrame"
 WalkSpeedFrame.Size = UDim2.new(1, -20, 0, 30)
@@ -79,7 +74,7 @@ WalkSpeedValue.Size = UDim2.new(0.35, 0, 1, 0)
 WalkSpeedValue.Position = UDim2.new(0.65, 0, 0, 0)
 WalkSpeedValue.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 WalkSpeedValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-WalkSpeedValue.Text = "500"
+WalkSpeedValue.Text = "16"
 WalkSpeedValue.TextSize = 14
 WalkSpeedValue.Font = Enum.Font.Gotham
 WalkSpeedValue.ClearTextOnFocus = false
@@ -89,7 +84,6 @@ local WalkSpeedCorner = Instance.new("UICorner")
 WalkSpeedCorner.CornerRadius = UDim.new(0, 4)
 WalkSpeedCorner.Parent = WalkSpeedValue
 
--- Fly Speed
 local FlySpeedFrame = Instance.new("Frame")
 FlySpeedFrame.Name = "FlySpeedFrame"
 FlySpeedFrame.Size = UDim2.new(1, -20, 0, 30)
@@ -114,7 +108,7 @@ FlySpeedValue.Size = UDim2.new(0.35, 0, 1, 0)
 FlySpeedValue.Position = UDim2.new(0.65, 0, 0, 0)
 FlySpeedValue.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 FlySpeedValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-FlySpeedValue.Text = "237"
+FlySpeedValue.Text = "50"
 FlySpeedValue.TextSize = 14
 FlySpeedValue.Font = Enum.Font.Gotham
 FlySpeedValue.ClearTextOnFocus = false
@@ -124,7 +118,6 @@ local FlySpeedCorner = Instance.new("UICorner")
 FlySpeedCorner.CornerRadius = UDim.new(0, 4)
 FlySpeedCorner.Parent = FlySpeedValue
 
--- Fly Hack Toggle
 local FlyToggle = Instance.new("TextButton")
 FlyToggle.Name = "FlyToggle"
 FlyToggle.Size = UDim2.new(1, -20, 0, 30)
@@ -140,7 +133,6 @@ local FlyToggleCorner = Instance.new("UICorner")
 FlyToggleCorner.CornerRadius = UDim.new(0, 6)
 FlyToggleCorner.Parent = FlyToggle
 
--- No Clip Toggle
 local NoClipToggle = Instance.new("TextButton")
 NoClipToggle.Name = "NoClipToggle"
 NoClipToggle.Size = UDim2.new(1, -20, 0, 30)
@@ -156,7 +148,6 @@ local NoClipToggleCorner = Instance.new("UICorner")
 NoClipToggleCorner.CornerRadius = UDim.new(0, 6)
 NoClipToggleCorner.Parent = NoClipToggle
 
--- Controls Info (обновлен для обеих платформ)
 local ControlsLabel = Instance.new("TextLabel")
 ControlsLabel.Name = "ControlsLabel"
 ControlsLabel.Size = UDim2.new(1, -20, 0, 20)
@@ -181,14 +172,12 @@ ControlsText.TextXAlignment = Enum.TextXAlignment.Left
 ControlsText.TextYAlignment = Enum.TextYAlignment.Top
 ControlsText.Parent = MainFrame
 
--- Обновляем текст управления в зависимости от платформы
 if isMobile then
     ControlsText.Text = "PC: WASD, Space/Shift\nMobile: Tap joystick buttons\nMenu: RightControl/Button"
 else
     ControlsText.Text = "WASD - Movement\nSpace - Up / Shift - Down\nRightControl - Menu"
 end
 
--- Всплывающее уведомление
 local Notification = Instance.new("Frame")
 Notification.Name = "Notification"
 Notification.Size = UDim2.new(0, 200, 0, 40)
@@ -212,21 +201,18 @@ NotificationText.TextSize = 14
 NotificationText.Font = Enum.Font.GothamBold
 NotificationText.Parent = Notification
 
--- Интерфейс для телефона (только если это мобильное устройство)
 local MobileControls
 local MobileMenuButton
 
 if isMobile then
-    -- Контейнер для мобильного управления
     MobileControls = Instance.new("Frame")
     MobileControls.Name = "MobileControls"
     MobileControls.Size = UDim2.new(0, 200, 0, 200)
     MobileControls.Position = UDim2.new(0, 10, 1, -210)
     MobileControls.BackgroundTransparency = 1
-    MobileControls.Visible = false -- Показываем только при включенном полете
+    MobileControls.Visible = false
     MobileControls.Parent = ScreenGui
     
-    -- Вверх
     local UpButton = Instance.new("TextButton")
     UpButton.Name = "UpButton"
     UpButton.Size = UDim2.new(0, 60, 0, 60)
@@ -242,7 +228,6 @@ if isMobile then
     UpCorner.CornerRadius = UDim.new(0, 30)
     UpCorner.Parent = UpButton
     
-    -- Вниз
     local DownButton = Instance.new("TextButton")
     DownButton.Name = "DownButton"
     DownButton.Size = UDim2.new(0, 60, 0, 60)
@@ -258,7 +243,6 @@ if isMobile then
     DownCorner.CornerRadius = UDim.new(0, 30)
     DownCorner.Parent = DownButton
     
-    -- Влево
     local LeftButton = Instance.new("TextButton")
     LeftButton.Name = "LeftButton"
     LeftButton.Size = UDim2.new(0, 60, 0, 60)
@@ -274,7 +258,6 @@ if isMobile then
     LeftCorner.CornerRadius = UDim.new(0, 30)
     LeftCorner.Parent = LeftButton
     
-    -- Вправо
     local RightButton = Instance.new("TextButton")
     RightButton.Name = "RightButton"
     RightButton.Size = UDim2.new(0, 60, 0, 60)
@@ -290,7 +273,6 @@ if isMobile then
     RightCorner.CornerRadius = UDim.new(0, 30)
     RightCorner.Parent = RightButton
     
-    -- Кнопка меню для телефона
     MobileMenuButton = Instance.new("TextButton")
     MobileMenuButton.Name = "MobileMenuButton"
     MobileMenuButton.Size = UDim2.new(0, 60, 0, 60)
@@ -307,14 +289,12 @@ if isMobile then
     MenuButtonCorner.Parent = MobileMenuButton
 end
 
--- Переменные для полета
 local flyEnabled = false
 local noClipEnabled = false
-local walkSpeed = 500
-local flySpeed = 237
+local walkSpeed = 16
+local flySpeed = 50
 local flyConnection
 
--- Переменные для управления полетом
 local flyForward = false
 local flyBackward = false
 local flyLeft = false
@@ -322,24 +302,19 @@ local flyRight = false
 local flyUp = false
 local flyDown = false
 
--- Функция показа уведомления
 local function showNotification(message, duration)
     NotificationText.Text = message
     Notification.Visible = true
-    
     task.wait(duration or 3)
-    
     Notification.Visible = false
 end
 
--- Показ уведомления при загрузке
 if isMobile then
     showNotification("ShFh Loaded! Tap MENU button", 4)
 else
     showNotification("ShFh Loaded! Press RightControl", 4)
 end
 
--- Обработчики значений
 WalkSpeedValue.FocusLost:Connect(function()
     local value = tonumber(WalkSpeedValue.Text)
     if value and value >= 1 and value <= 500 then
@@ -363,8 +338,7 @@ FlySpeedValue.FocusLost:Connect(function()
     end
 end)
 
--- Функция обновления полета
-local function updateFly()
+local function flyFunction()
     if not flyEnabled or not LocalPlayer.Character then return end
     
     local character = LocalPlayer.Character
@@ -373,46 +347,29 @@ local function updateFly()
     
     if not humanoid or not rootPart then return end
     
-    -- Отключаем гравитацию при полете
     humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
     
-    -- Вычисляем направление движения
     local direction = Vector3.new(0, 0, 0)
     
-    if flyForward then
-        direction = direction + rootPart.CFrame.LookVector
-    end
-    if flyBackward then
-        direction = direction - rootPart.CFrame.LookVector
-    end
-    if flyRight then
-        direction = direction + rootPart.CFrame.RightVector
-    end
-    if flyLeft then
-        direction = direction - rootPart.CFrame.RightVector
-    end
-    if flyUp then
-        direction = direction + Vector3.new(0, 1, 0)
-    end
-    if flyDown then
-        direction = direction + Vector3.new(0, -1, 0)
-    end
+    if flyForward then direction = direction + (rootPart.CFrame.LookVector * 2) end
+    if flyBackward then direction = direction - (rootPart.CFrame.LookVector * 2) end
+    if flyRight then direction = direction + (rootPart.CFrame.RightVector * 2) end
+    if flyLeft then direction = direction - (rootPart.CFrame.RightVector * 2) end
+    if flyUp then direction = direction + Vector3.new(0, 2, 0) end
+    if flyDown then direction = direction + Vector3.new(0, -2, 0) end
     
-    -- Нормализуем и применяем скорость
     if direction.Magnitude > 0 then
         direction = direction.Unit
-        rootPart.Velocity = direction * flySpeed
+        local velocity = direction * flySpeed
+        rootPart.Velocity = Vector3.new(velocity.X, velocity.Y, velocity.Z)
     else
-        -- Плавная остановка
-        rootPart.Velocity = rootPart.Velocity:Lerp(Vector3.new(0, 0, 0), 0.2)
+        rootPart.Velocity = Vector3.new(0, 0, 0)
     end
 end
 
--- Включение/выключение полета
 local function toggleFly()
     if flyEnabled then
-        -- Включаем полет
         FlyToggle.Text = "Fly Hack: ON"
         FlyToggle.TextColor3 = Color3.fromRGB(80, 255, 80)
         showNotification("Fly Hack: ON", 2)
@@ -424,24 +381,20 @@ local function toggleFly()
                 humanoid.PlatformStand = true
             end
             
-            -- Создаем соединение для обновления полета
             if flyConnection then
                 flyConnection:Disconnect()
             end
-            flyConnection = RunService.Heartbeat:Connect(updateFly)
+            flyConnection = RunService.Heartbeat:Connect(flyFunction)
             
-            -- Показываем кнопки управления на телефоне
             if isMobile and MobileControls then
                 MobileControls.Visible = true
             end
         end
     else
-        -- Выключаем полет
         FlyToggle.Text = "Fly Hack: OFF"
         FlyToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
         showNotification("Fly Hack: OFF", 2)
         
-        -- Сбрасываем состояние управления
         flyForward = false
         flyBackward = false
         flyLeft = false
@@ -465,20 +418,17 @@ local function toggleFly()
             end
         end
         
-        -- Отключаем соединение
         if flyConnection then
             flyConnection:Disconnect()
             flyConnection = nil
         end
         
-        -- Скрываем кнопки управления на телефоне
         if isMobile and MobileControls then
             MobileControls.Visible = false
         end
     end
 end
 
--- Тогглы
 FlyToggle.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
     toggleFly()
@@ -497,106 +447,69 @@ NoClipToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Обработка кнопок на телефоне
 if isMobile then
-    -- Кнопка меню
     MobileMenuButton.MouseButton1Click:Connect(function()
         MainFrame.Visible = not MainFrame.Visible
     end)
     
-    -- Кнопки управления полетом
     local UpButton = MobileControls:FindFirstChild("UpButton")
     local DownButton = MobileControls:FindFirstChild("DownButton")
     local LeftButton = MobileControls:FindFirstChild("LeftButton")
     local RightButton = MobileControls:FindFirstChild("RightButton")
     
-    -- Вверх
     UpButton.MouseButton1Down:Connect(function()
-        if flyEnabled then
-            flyUp = true
-        end
+        if flyEnabled then flyUp = true end
     end)
     
     UpButton.MouseButton1Up:Connect(function()
-        if flyEnabled then
-            flyUp = false
-        end
+        if flyEnabled then flyUp = false end
     end)
     
-    -- Вниз
     DownButton.MouseButton1Down:Connect(function()
-        if flyEnabled then
-            flyDown = true
-        end
+        if flyEnabled then flyDown = true end
     end)
     
     DownButton.MouseButton1Up:Connect(function()
-        if flyEnabled then
-            flyDown = false
-        end
+        if flyEnabled then flyDown = false end
     end)
     
-    -- Влево
     LeftButton.MouseButton1Down:Connect(function()
-        if flyEnabled then
-            flyLeft = true
-        end
+        if flyEnabled then flyLeft = true end
     end)
     
     LeftButton.MouseButton1Up:Connect(function()
-        if flyEnabled then
-            flyLeft = false
-        end
+        if flyEnabled then flyLeft = false end
     end)
     
-    -- Вправо
     RightButton.MouseButton1Down:Connect(function()
-        if flyEnabled then
-            flyRight = true
-        end
+        if flyEnabled then flyRight = true end
     end)
     
     RightButton.MouseButton1Up:Connect(function()
-        if flyEnabled then
-            flyRight = false
-        end
+        if flyEnabled then flyRight = false end
     end)
     
-    -- Также добавляем тапы для вперед/назад (долгое нажатие)
-    local longPressTime = 0
-    local longPressThreshold = 0.3
-    
     UpButton.TouchLongPress:Connect(function()
-        if flyEnabled then
-            flyForward = true
-        end
+        if flyEnabled then flyForward = true end
     end)
     
     UpButton.TouchEnded:Connect(function()
-        if flyEnabled then
-            flyForward = false
-        end
+        if flyEnabled then flyForward = false end
     end)
     
     DownButton.TouchLongPress:Connect(function()
-        if flyEnabled then
-            flyBackward = true
-        end
+        if flyEnabled then flyBackward = true end
     end)
     
     DownButton.TouchEnded:Connect(function()
-        if flyEnabled then
-            flyBackward = false
-        end
+        if flyEnabled then flyBackward = false end
     end)
 end
 
--- Управление полетом на ПК
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed then
         local key = input.KeyCode
         
-        -- Управление полетом (только на ПК)
         if not isMobile and flyEnabled then
             if key == Enum.KeyCode.W then
                 flyForward = true
@@ -613,7 +526,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             end
         end
         
-        -- Открытие/закрытие меню
         if not isMobile and key == Enum.KeyCode.RightControl then
             MainFrame.Visible = not MainFrame.Visible
         end
@@ -640,9 +552,7 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
--- Основной цикл
 RunService.Heartbeat:Connect(function()
-    -- Применение WalkSpeed когда не летим
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         local humanoid = LocalPlayer.Character.Humanoid
         if not flyEnabled then
@@ -651,7 +561,6 @@ RunService.Heartbeat:Connect(function()
         end
     end
     
-    -- No Clip логика
     if LocalPlayer.Character then
         for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -661,7 +570,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Установка начальной скорости
 task.spawn(function()
     task.wait(1)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -669,9 +577,7 @@ task.spawn(function()
     end
 end)
 
--- Очистка при выходе из игры
 game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(character)
-    -- Сбрасываем состояние полета при появлении нового персонажа
     if flyEnabled then
         task.wait(0.5)
         toggleFly()
@@ -679,7 +585,6 @@ game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(character
 end)
 
 game:GetService("Players").LocalPlayer.CharacterRemoving:Connect(function()
-    -- Сбрасываем состояние при удалении персонажа
     flyEnabled = false
     if flyConnection then
         flyConnection:Disconnect()
