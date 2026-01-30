@@ -51,7 +51,7 @@ local flyKeys = {
     Shift = false
 }
 
--- Простой и стабильный полет
+-- Полет куда смотришь + отдельные клавиши вверх/вниз
 local function flyFunction()
     if not flyEnabled or not LocalPlayer.Character then return end
     
@@ -66,28 +66,29 @@ local function flyFunction()
     local camera = workspace.CurrentCamera
     local cameraCFrame = camera.CFrame
     
-    -- Векторы направления камеры
+    -- Векторы направления камеры (полные 3D)
     local lookVector = cameraCFrame.LookVector
     local rightVector = cameraCFrame.RightVector
-    
-    -- Убираем вертикальную составляющую для горизонтального движения
-    local horizontalLook = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
-    local horizontalRight = Vector3.new(rightVector.X, 0, rightVector.Z).Unit
+    local upVector = cameraCFrame.UpVector
     
     local direction = Vector3.new(0, 0, 0)
     
-    -- Горизонтальное движение (относительно камеры)
-    if flyKeys.W then direction = direction + horizontalLook end
-    if flyKeys.S then direction = direction - horizontalLook end
+    -- Движение куда смотришь (W/S)
+    if flyKeys.W then direction = direction + lookVector end
+    if flyKeys.S then direction = direction - lookVector end
+    
+    -- Боковое движение (A/D) без вертикальной составляющей
+    local horizontalRight = Vector3.new(rightVector.X, 0, rightVector.Z).Unit
     if flyKeys.D then direction = direction + horizontalRight end
     if flyKeys.A then direction = direction - horizontalRight end
     
-    -- Вертикальное движение (отдельные клавиши)
+    -- Дополнительное вертикальное движение (Space/Shift)
     if flyKeys.Space then direction = direction + Vector3.new(0, 1, 0) end
     if flyKeys.Shift then direction = direction + Vector3.new(0, -1, 0) end
     
-    -- Полностью отключаем гравитацию
+    -- Полностью отключаем гравитацию и вращение
     rootPart.Velocity = Vector3.new(0, 0, 0)
+    rootPart.RotVelocity = Vector3.new(0, 0, 0)
     
     -- Применяем скорость движения
     if direction.Magnitude > 0 then
@@ -95,13 +96,11 @@ local function flyFunction()
         rootPart.Velocity = direction * flySpeed
     end
     
-    -- Поворачиваем персонажа в сторону горизонтального движения
-    if (flyKeys.W or flyKeys.A or flyKeys.S or flyKeys.D) then
-        local horizontalDirection = Vector3.new(direction.X, 0, direction.Z)
-        if horizontalDirection.Magnitude > 0.1 then
-            rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + horizontalDirection)
-        end
-    end
+    -- Фиксируем поворот персонажа (предотвращаем сальто)
+    -- Сохраняем только горизонтальный поворот (Y-вращение)
+    local currentCFrame = rootPart.CFrame
+    local _, y, _ = currentCFrame:ToEulerAnglesYXZ()
+    rootPart.CFrame = CFrame.new(currentCFrame.Position) * CFrame.Angles(0, y, 0)
 end
 
 local function startFly()
@@ -116,8 +115,14 @@ local function startFly()
         
         -- Полностью останавливаем любую физику
         rootPart.Velocity = Vector3.new(0, 0, 0)
+        rootPart.RotVelocity = Vector3.new(0, 0, 0)
         rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        
+        -- Фиксируем начальную ориентацию
+        local currentCFrame = rootPart.CFrame
+        local _, y, _ = currentCFrame:ToEulerAnglesYXZ()
+        rootPart.CFrame = CFrame.new(currentCFrame.Position) * CFrame.Angles(0, y, 0)
     end
     
     if flyConnection then
@@ -140,7 +145,9 @@ local function stopFly()
     
     if rootPart then
         rootPart.Velocity = Vector3.new(0, 0, 0)
+        rootPart.RotVelocity = Vector3.new(0, 0, 0)
         rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
     end
     
     if flyConnection then
@@ -400,9 +407,9 @@ local function loadMainUI()
     ControlsText.Parent = ControlsFrame
     
     if isMobile then
-        ControlsText.Text = "Fly: Camera relative\nSpace/Up - Fly up\nShift/Down - Fly down\nTap Menu button for menu"
+        ControlsText.Text = "Fly: Look direction + WASD\nSpace/Up - Extra up\nShift/Down - Extra down\nTap Menu button for menu"
     else
-        ControlsText.Text = "Fly: Camera relative movement\nWASD - Move\nSpace - Up / Shift - Down\nRightControl - Toggle Menu"
+        ControlsText.Text = "Fly: Where you look, you fly\nW/S - Forward/Backward\nA/D - Left/Right (horizontal)\nSpace - Extra up / Shift - Extra down\nRightControl - Toggle Menu"
     end
     
     WalkSpeedBox.FocusLost:Connect(function()
