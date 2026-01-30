@@ -15,20 +15,38 @@ local authData = {
     expiry = 0
 }
 
+-- Сохранение времени доступа
 local function saveAuth()
     pcall(function()
-        writefile("shfh_auth.txt", tostring(authData.expiry))
+        -- Сохраняем время истечения
+        local data = {
+            expiry = authData.expiry
+        }
+        writefile("shfh_auth.txt", game:GetService("HttpService"):JSONEncode(data))
     end)
 end
 
+-- Загрузка времени доступа
 local function loadAuth()
     pcall(function()
         if isfile("shfh_auth.txt") then
-            local expiry = tonumber(readfile("shfh_auth.txt"))
-            if expiry and os.time() < expiry then
-                authData.authenticated = true
-                authData.expiry = expiry
-                return true
+            local success, data = pcall(function()
+                return game:GetService("HttpService"):JSONDecode(readfile("shfh_auth.txt"))
+            end)
+            
+            if success and data and data.expiry then
+                local expiry = tonumber(data.expiry)
+                if expiry then
+                    -- Проверяем, не истекло ли время
+                    if os.time() < expiry then
+                        authData.authenticated = true
+                        authData.expiry = expiry
+                        return true
+                    else
+                        -- Время истекло, удаляем файл
+                        delfile("shfh_auth.txt")
+                    end
+                end
             end
         end
     end)
@@ -69,7 +87,6 @@ local function flyFunction()
     -- Векторы направления камеры (полные 3D)
     local lookVector = cameraCFrame.LookVector
     local rightVector = cameraCFrame.RightVector
-    local upVector = cameraCFrame.UpVector
     
     local direction = Vector3.new(0, 0, 0)
     
@@ -97,7 +114,6 @@ local function flyFunction()
     end
     
     -- Фиксируем поворот персонажа (предотвращаем сальто)
-    -- Сохраняем только горизонтальный поворот (Y-вращение)
     local currentCFrame = rootPart.CFrame
     local _, y, _ = currentCFrame:ToEulerAnglesYXZ()
     rootPart.CFrame = CFrame.new(currentCFrame.Position) * CFrame.Angles(0, y, 0)
@@ -295,7 +311,7 @@ local function loadMainUI()
                 local minutes = math.floor((remaining % 3600) / 60)
                 AuthTimer.Text = string.format("Access: %02dh %02dm", hours, minutes)
             else
-                AuthTimer.Text = "Access expired - restart script"
+                AuthTimer.Text = "Access expired"
             end
         else
             AuthTimer.Text = "Access: Unlimited"
@@ -448,7 +464,6 @@ local function loadMainUI()
             FlyToggle.BackgroundColor3 = Color3.fromRGB(40, 60, 40)
             startFly()
             
-            -- Показываем кнопки высоты только при включенном флае
             if isMobile and MobileUp and MobileDown then
                 MobileUp.Visible = true
                 MobileDown.Visible = true
@@ -459,7 +474,6 @@ local function loadMainUI()
             FlyToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
             stopFly()
             
-            -- Скрываем кнопки высоты при выключенном флае
             if isMobile and MobileUp and MobileDown then
                 MobileUp.Visible = false
                 MobileDown.Visible = false
@@ -480,7 +494,6 @@ local function loadMainUI()
         end
     end)
     
-    -- Создаем кнопку меню для телефона
     if isMobile then
         MenuToggleButton = Instance.new("TextButton")
         MenuToggleButton.Name = "MenuToggleButton"
@@ -502,7 +515,6 @@ local function loadMainUI()
         end)
     end
     
-    -- Мобильный джойстик для полета
     if isMobile then
         local MobileControls = Instance.new("Frame")
         MobileControls.Name = "MobileControls"
@@ -531,7 +543,6 @@ local function loadMainUI()
         InnerCorner.CornerRadius = UDim.new(1, 0)
         InnerCorner.Parent = JoystickInner
         
-        -- Кнопки высоты для мобильных (создаем но сразу скрываем)
         MobileUp = Instance.new("TextButton")
         MobileUp.Size = UDim2.new(0, 60, 0, 60)
         MobileUp.Position = UDim2.new(0.5, -30, 0, 10)
@@ -539,7 +550,7 @@ local function loadMainUI()
         MobileUp.Text = "↑"
         MobileUp.TextColor3 = Color3.fromRGB(255, 255, 255)
         MobileUp.TextSize = 20
-        MobileUp.Visible = false -- Скрываем по умолчанию
+        MobileUp.Visible = false
         MobileUp.Parent = ScreenGui
         
         MobileDown = Instance.new("TextButton")
@@ -549,7 +560,7 @@ local function loadMainUI()
         MobileDown.Text = "↓"
         MobileDown.TextColor3 = Color3.fromRGB(255, 255, 255)
         MobileDown.TextSize = 20
-        MobileDown.Visible = false -- Скрываем по умолчанию
+        MobileDown.Visible = false
         MobileDown.Parent = ScreenGui
         
         MobileUp.MouseButton1Down:Connect(function()
@@ -568,7 +579,6 @@ local function loadMainUI()
             if flyEnabled then flyKeys.Shift = false end
         end)
         
-        -- Обработка джойстика для мобильных
         local touching = false
         local joystickCenter = Vector2.new(75, 75)
         
@@ -616,7 +626,6 @@ local function loadMainUI()
         end)
     end
     
-    -- Управление для ПК
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed then
             local key = input.KeyCode
@@ -651,10 +660,8 @@ local function loadMainUI()
         end
     end)
     
-    -- Основной цикл для NoClip и скорости ходьбы
     RunService.Heartbeat:Connect(function()
         if LocalPlayer.Character then
-            -- Применяем скорость ходьбы
             if not flyEnabled then
                 local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
                 if humanoid then
@@ -662,7 +669,6 @@ local function loadMainUI()
                 end
             end
             
-            -- NoClip
             if noClipEnabled then
                 for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
                     if part:IsA("BasePart") then
@@ -673,7 +679,6 @@ local function loadMainUI()
         end
     end)
     
-    -- Установка начальной скорости
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
@@ -686,7 +691,6 @@ end
 if loadAuth() then
     loadMainUI()
 else
-    -- Показываем окно ввода пароля
     local PasswordUI = Instance.new("Frame")
     PasswordUI.Name = "PasswordUI"
     PasswordUI.Size = UDim2.new(0, 300, 0, 180)
@@ -744,8 +748,8 @@ else
     SubmitBtn.MouseButton1Click:Connect(function()
         if PasswordBox.Text == passwordKey then
             authData.authenticated = true
-            authData.expiry = os.time() + (24 * 60 * 60)
-            saveAuth()
+            authData.expiry = os.time() + (24 * 60 * 60) -- 24 часа
+            saveAuth() -- Сохраняем сразу
             PasswordUI:Destroy()
             loadMainUI()
         else
