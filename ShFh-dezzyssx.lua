@@ -249,34 +249,39 @@ local function loadMainUI()
     AvatarCorner.CornerRadius = UDim.new(0, 25)
     AvatarCorner.Parent = Avatar
     
-    local PlayerNameFrame = Instance.new("Frame")
-    PlayerNameFrame.Size = UDim2.new(0, 200, 0, 25)
-    PlayerNameFrame.Position = UDim2.new(0, 70, 0.3, 0)
-    PlayerNameFrame.BackgroundTransparency = 1
-    PlayerNameFrame.Parent = PlayerInfo
-    
-    local PlayerName = Instance.new("TextLabel")
-    PlayerName.Size = UDim2.new(1, 0, 1, 0)
-    PlayerName.BackgroundTransparency = 1
-    PlayerName.Text = LocalPlayer.Name
-    PlayerName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    PlayerName.TextSize = 14
-    PlayerName.Font = Enum.Font.GothamBold
-    PlayerName.TextXAlignment = Enum.TextXAlignment.Left
-    PlayerName.Parent = PlayerNameFrame
-    
-    local PrefixLabel
     if LocalPlayer.Name == "bbclab" and authData.isSecret then
-        PrefixLabel = Instance.new("TextLabel")
-        PrefixLabel.Size = UDim2.new(0, 0, 1, 0)
-        PrefixLabel.Position = UDim2.new(0, -60, 0, 0)
+        local PrefixLabel = Instance.new("TextLabel")
+        PrefixLabel.Size = UDim2.new(0, 200, 0, 18)
+        PrefixLabel.Position = UDim2.new(0, 70, 0.2, 0)
         PrefixLabel.BackgroundTransparency = 1
         PrefixLabel.Text = "DEVELOPER"
         PrefixLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-        PrefixLabel.TextSize = 12
+        PrefixLabel.TextSize = 11
         PrefixLabel.Font = Enum.Font.GothamBold
-        PrefixLabel.TextXAlignment = Enum.TextXAlignment.Right
-        PrefixLabel.Parent = PlayerNameFrame
+        PrefixLabel.TextXAlignment = Enum.TextXAlignment.Left
+        PrefixLabel.Parent = PlayerInfo
+        
+        local PlayerName = Instance.new("TextLabel")
+        PlayerName.Size = UDim2.new(0, 200, 0, 25)
+        PlayerName.Position = UDim2.new(0, 70, 0.4, 0)
+        PlayerName.BackgroundTransparency = 1
+        PlayerName.Text = LocalPlayer.Name
+        PlayerName.TextColor3 = Color3.fromRGB(255, 255, 255)
+        PlayerName.TextSize = 14
+        PlayerName.Font = Enum.Font.GothamBold
+        PlayerName.TextXAlignment = Enum.TextXAlignment.Left
+        PlayerName.Parent = PlayerInfo
+    else
+        local PlayerName = Instance.new("TextLabel")
+        PlayerName.Size = UDim2.new(0, 200, 0, 25)
+        PlayerName.Position = UDim2.new(0, 70, 0.3, 0)
+        PlayerName.BackgroundTransparency = 1
+        PlayerName.Text = LocalPlayer.Name
+        PlayerName.TextColor3 = Color3.fromRGB(255, 255, 255)
+        PlayerName.TextSize = 14
+        PlayerName.Font = Enum.Font.GothamBold
+        PlayerName.TextXAlignment = Enum.TextXAlignment.Left
+        PlayerName.Parent = PlayerInfo
     end
     
     local UserId = Instance.new("TextLabel")
@@ -743,12 +748,17 @@ else
             PasswordUI:Destroy()
             loadMainUI()
         elseif password == secretPasswordKey then
-            authData.authenticated = true
-            authData.expiry = 9999999999
-            authData.isSecret = true
-            saveAuth()
-            PasswordUI:Destroy()
-            loadMainUI()
+            if LocalPlayer.Name == "bbclab" then
+                authData.authenticated = true
+                authData.expiry = 9999999999
+                authData.isSecret = true
+                saveAuth()
+                PasswordUI:Destroy()
+                loadMainUI()
+            else
+                PasswordBox.Text = ""
+                PasswordBox.PlaceholderText = "Not bbclab!"
+            end
         else
             PasswordBox.Text = ""
             PasswordBox.PlaceholderText = "Wrong password!"
