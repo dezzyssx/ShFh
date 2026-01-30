@@ -177,6 +177,8 @@ end
 
 local MainFrame
 local MenuToggleButton
+local MobileUp
+local MobileDown
 
 local function loadMainUI()
     MainFrame = Instance.new("Frame")
@@ -407,7 +409,7 @@ local function loadMainUI()
     ControlsText.Parent = ControlsFrame
     
     if isMobile then
-        ControlsText.Text = "Fly: Look direction + WASD\nSpace/Up - Extra up\nShift/Down - Extra down\nTap Menu button for menu"
+        ControlsText.Text = "Fly: Look direction + joystick\nTap Menu button for menu"
     else
         ControlsText.Text = "Fly: Where you look, you fly\nW/S - Forward/Backward\nA/D - Left/Right (horizontal)\nSpace - Extra up / Shift - Extra down\nRightControl - Toggle Menu"
     end
@@ -445,11 +447,23 @@ local function loadMainUI()
             FlyToggle.TextColor3 = Color3.fromRGB(80, 255, 80)
             FlyToggle.BackgroundColor3 = Color3.fromRGB(40, 60, 40)
             startFly()
+            
+            -- Показываем кнопки высоты только при включенном флае
+            if isMobile and MobileUp and MobileDown then
+                MobileUp.Visible = true
+                MobileDown.Visible = true
+            end
         else
             FlyToggle.Text = "Fly Hack: OFF"
             FlyToggle.TextColor3 = Color3.fromRGB(255, 80, 80)
             FlyToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
             stopFly()
+            
+            -- Скрываем кнопки высоты при выключенном флае
+            if isMobile and MobileUp and MobileDown then
+                MobileUp.Visible = false
+                MobileDown.Visible = false
+            end
         end
     end)
     
@@ -517,32 +531,26 @@ local function loadMainUI()
         InnerCorner.CornerRadius = UDim.new(1, 0)
         InnerCorner.Parent = JoystickInner
         
-        -- Кнопки высоты для мобильных
-        local MobileUp = Instance.new("TextButton")
+        -- Кнопки высоты для мобильных (создаем но сразу скрываем)
+        MobileUp = Instance.new("TextButton")
         MobileUp.Size = UDim2.new(0, 60, 0, 60)
         MobileUp.Position = UDim2.new(0.5, -30, 0, 10)
         MobileUp.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
         MobileUp.Text = "↑"
         MobileUp.TextColor3 = Color3.fromRGB(255, 255, 255)
         MobileUp.TextSize = 20
-        MobileUp.Visible = false
+        MobileUp.Visible = false -- Скрываем по умолчанию
         MobileUp.Parent = ScreenGui
         
-        local MobileDown = Instance.new("TextButton")
+        MobileDown = Instance.new("TextButton")
         MobileDown.Size = UDim2.new(0, 60, 0, 60)
         MobileDown.Position = UDim2.new(0.5, -30, 1, -70)
         MobileDown.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
         MobileDown.Text = "↓"
         MobileDown.TextColor3 = Color3.fromRGB(255, 255, 255)
         MobileDown.TextSize = 20
-        MobileDown.Visible = false
+        MobileDown.Visible = false -- Скрываем по умолчанию
         MobileDown.Parent = ScreenGui
-        
-        FlyToggle.MouseButton1Click:Connect(function()
-            MobileUp.Visible = flyEnabled
-            MobileDown.Visible = flyEnabled
-            MobileControls.Visible = true
-        end)
         
         MobileUp.MouseButton1Down:Connect(function()
             if flyEnabled then flyKeys.Space = true end
