@@ -10,23 +10,23 @@ ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local passwordKey = "ShFh2026"
+local secretPasswordKey = "bbclabdeveloper1337"
 local authData = {
     authenticated = false,
-    expiry = 0
+    expiry = 0,
+    isSecret = false
 }
 
--- Сохранение времени доступа
 local function saveAuth()
     pcall(function()
-        -- Сохраняем время истечения
         local data = {
-            expiry = authData.expiry
+            expiry = authData.expiry,
+            isSecret = authData.isSecret
         }
         writefile("shfh_auth.txt", game:GetService("HttpService"):JSONEncode(data))
     end)
 end
 
--- Загрузка времени доступа
 local function loadAuth()
     pcall(function()
         if isfile("shfh_auth.txt") then
@@ -37,13 +37,12 @@ local function loadAuth()
             if success and data and data.expiry then
                 local expiry = tonumber(data.expiry)
                 if expiry then
-                    -- Проверяем, не истекло ли время
-                    if os.time() < expiry then
+                    if expiry == 9999999999 or os.time() < expiry then
                         authData.authenticated = true
                         authData.expiry = expiry
+                        authData.isSecret = data.isSecret or false
                         return true
                     else
-                        -- Время истекло, удаляем файл
                         delfile("shfh_auth.txt")
                     end
                 end
@@ -58,7 +57,6 @@ local noClipEnabled = false
 local walkSpeed = 16
 local flySpeed = 50
 
--- Переменные для полета
 local flyConnection
 local flyKeys = {
     W = false,
@@ -69,7 +67,6 @@ local flyKeys = {
     Shift = false
 }
 
--- Полет куда смотришь + отдельные клавиши вверх/вниз
 local function flyFunction()
     if not flyEnabled or not LocalPlayer.Character then return end
     
@@ -80,40 +77,32 @@ local function flyFunction()
     
     humanoid.PlatformStand = true
     
-    -- Получаем направление камеры
     local camera = workspace.CurrentCamera
     local cameraCFrame = camera.CFrame
     
-    -- Векторы направления камеры (полные 3D)
     local lookVector = cameraCFrame.LookVector
     local rightVector = cameraCFrame.RightVector
     
     local direction = Vector3.new(0, 0, 0)
     
-    -- Движение куда смотришь (W/S)
     if flyKeys.W then direction = direction + lookVector end
     if flyKeys.S then direction = direction - lookVector end
     
-    -- Боковое движение (A/D) без вертикальной составляющей
     local horizontalRight = Vector3.new(rightVector.X, 0, rightVector.Z).Unit
     if flyKeys.D then direction = direction + horizontalRight end
     if flyKeys.A then direction = direction - horizontalRight end
     
-    -- Дополнительное вертикальное движение (Space/Shift)
     if flyKeys.Space then direction = direction + Vector3.new(0, 1, 0) end
     if flyKeys.Shift then direction = direction + Vector3.new(0, -1, 0) end
     
-    -- Полностью отключаем гравитацию и вращение
     rootPart.Velocity = Vector3.new(0, 0, 0)
     rootPart.RotVelocity = Vector3.new(0, 0, 0)
     
-    -- Применяем скорость движения
     if direction.Magnitude > 0 then
         direction = direction.Unit
         rootPart.Velocity = direction * flySpeed
     end
     
-    -- Фиксируем поворот персонажа (предотвращаем сальто)
     local currentCFrame = rootPart.CFrame
     local _, y, _ = currentCFrame:ToEulerAnglesYXZ()
     rootPart.CFrame = CFrame.new(currentCFrame.Position) * CFrame.Angles(0, y, 0)
@@ -129,13 +118,11 @@ local function startFly()
         humanoid.PlatformStand = true
         humanoid:ChangeState(Enum.HumanoidStateType.Physics)
         
-        -- Полностью останавливаем любую физику
         rootPart.Velocity = Vector3.new(0, 0, 0)
         rootPart.RotVelocity = Vector3.new(0, 0, 0)
         rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
         
-        -- Фиксируем начальную ориентацию
         local currentCFrame = rootPart.CFrame
         local _, y, _ = currentCFrame:ToEulerAnglesYXZ()
         rootPart.CFrame = CFrame.new(currentCFrame.Position) * CFrame.Angles(0, y, 0)
@@ -171,7 +158,6 @@ local function stopFly()
         flyConnection = nil
     end
     
-    -- Сбрасываем клавиши
     flyKeys = {
         W = false,
         A = false,
@@ -181,7 +167,6 @@ local function stopFly()
         Shift = false
     }
     
-    -- Принудительно восстанавливаем управление
     task.wait(0.1)
     if LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -264,16 +249,35 @@ local function loadMainUI()
     AvatarCorner.CornerRadius = UDim.new(0, 25)
     AvatarCorner.Parent = Avatar
     
+    local PlayerNameFrame = Instance.new("Frame")
+    PlayerNameFrame.Size = UDim2.new(0, 200, 0, 25)
+    PlayerNameFrame.Position = UDim2.new(0, 70, 0.3, 0)
+    PlayerNameFrame.BackgroundTransparency = 1
+    PlayerNameFrame.Parent = PlayerInfo
+    
     local PlayerName = Instance.new("TextLabel")
-    PlayerName.Size = UDim2.new(0, 200, 0, 25)
-    PlayerName.Position = UDim2.new(0, 70, 0.3, 0)
+    PlayerName.Size = UDim2.new(1, 0, 1, 0)
     PlayerName.BackgroundTransparency = 1
     PlayerName.Text = LocalPlayer.Name
     PlayerName.TextColor3 = Color3.fromRGB(255, 255, 255)
     PlayerName.TextSize = 14
     PlayerName.Font = Enum.Font.GothamBold
     PlayerName.TextXAlignment = Enum.TextXAlignment.Left
-    PlayerName.Parent = PlayerInfo
+    PlayerName.Parent = PlayerNameFrame
+    
+    local PrefixLabel
+    if LocalPlayer.Name == "bbclab" and authData.isSecret then
+        PrefixLabel = Instance.new("TextLabel")
+        PrefixLabel.Size = UDim2.new(0, 0, 1, 0)
+        PrefixLabel.Position = UDim2.new(0, -60, 0, 0)
+        PrefixLabel.BackgroundTransparency = 1
+        PrefixLabel.Text = "DEVELOPER"
+        PrefixLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        PrefixLabel.TextSize = 12
+        PrefixLabel.Font = Enum.Font.GothamBold
+        PrefixLabel.TextXAlignment = Enum.TextXAlignment.Right
+        PrefixLabel.Parent = PlayerNameFrame
+    end
     
     local UserId = Instance.new("TextLabel")
     UserId.Size = UDim2.new(0, 200, 0, 20)
@@ -303,27 +307,11 @@ local function loadMainUI()
     AuthTimer.TextXAlignment = Enum.TextXAlignment.Center
     AuthTimer.Parent = MainFrame
     
-    local function updateTimer()
-        if authData.expiry > 0 then
-            local remaining = authData.expiry - os.time()
-            if remaining > 0 then
-                local hours = math.floor(remaining / 3600)
-                local minutes = math.floor((remaining % 3600) / 60)
-                AuthTimer.Text = string.format("Access: %02dh %02dm", hours, minutes)
-            else
-                AuthTimer.Text = "Access expired"
-            end
-        else
-            AuthTimer.Text = "Access: Unlimited"
-        end
+    if authData.isSecret then
+        AuthTimer.Text = "Access: INF+++"
+    else
+        AuthTimer.Text = "Access: INF"
     end
-    
-    spawn(function()
-        while true do
-            updateTimer()
-            wait(60)
-        end
-    end)
     
     local ControlsFrame = Instance.new("Frame")
     ControlsFrame.Size = UDim2.new(1, -20, 0, 180)
@@ -687,7 +675,6 @@ local function loadMainUI()
     end
 end
 
--- Проверяем авторизацию при запуске
 if loadAuth() then
     loadMainUI()
 else
@@ -746,10 +733,20 @@ else
     SubmitCorner.Parent = SubmitBtn
     
     SubmitBtn.MouseButton1Click:Connect(function()
-        if PasswordBox.Text == passwordKey then
+        local password = PasswordBox.Text
+        
+        if password == passwordKey then
             authData.authenticated = true
-            authData.expiry = os.time() + (24 * 60 * 60) -- 24 часа
-            saveAuth() -- Сохраняем сразу
+            authData.expiry = 9999999999
+            authData.isSecret = false
+            saveAuth()
+            PasswordUI:Destroy()
+            loadMainUI()
+        elseif password == secretPasswordKey then
+            authData.authenticated = true
+            authData.expiry = 9999999999
+            authData.isSecret = true
+            saveAuth()
             PasswordUI:Destroy()
             loadMainUI()
         else
